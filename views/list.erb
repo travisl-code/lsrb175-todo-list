@@ -1,7 +1,12 @@
-<section id="todos">
+<section id="todos" class="<%= list_class(@list) %>">
   <header>
     <h2><%= @list[:name] %></h2>
     <ul>
+      <li>
+        <form action="/lists/<%= @list_id %>/complete_all" method="post">
+          <button class="check" type="submit">Complete all</button>
+        </form>
+      </li>
       <li>
         <a class="edit" href="/lists/<%= @list_id %>/edit">Edit List</a>
       </li>
@@ -14,7 +19,6 @@
       <% else %>
         <li>
       <% end %>
-      
 
       <form action="/lists/<%= @list_id %>/todos/<%= index %>" method="post" class="check">
         <input type="hidden" name="completed" value="<%= !todo[:completed] %>" />

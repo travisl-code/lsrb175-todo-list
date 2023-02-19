@@ -12,6 +12,26 @@ before do
   session[:lists] ||= []
 end
 
+helpers do
+  def list_completed?(list)
+    !list[:todos].empty? && list[:todos].all? { |todo| todo[:completed] }
+  end
+
+  def list_class(list)
+    # list = session[:lists][list_id.to_i]
+    "complete" if list_completed?(list)
+  end
+
+  def evaluate_todos_complete(list)
+    num_total = list[:todos].size
+    num_completed = list[:todos].select do |todo|
+      todo[:completed]
+    end.size
+    
+    "#{num_completed}/#{num_total}"
+  end
+end
+
 get "/" do
   redirect '/lists'
 end
@@ -136,7 +156,17 @@ post "/lists/:list_id/todos/:todo_id" do
   @todo_id = params[:todo_id].to_i
   toggle = params['completed'] == 'true'
 
-  @list[:todos][@todo_id][:completed] = toggle
+  @list[:todos][@todo_id][:completed] = toggle 
   session[:success] = "Todo status updated"
   redirect "/lists/#{@list_id}"
+end
+
+# Mark all todos done
+post "/lists/:id/complete_all" do
+  @id = params[:id].to_i
+  @list = session[:lists][@id]
+  @list[:todos].each { |todo| todo[:completed] = true }
+  
+  session[:success] = "Todos completed"
+  redirect "/lists/#{@id}"
 end
