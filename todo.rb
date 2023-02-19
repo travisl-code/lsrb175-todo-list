@@ -30,6 +30,15 @@ helpers do
     
     "#{num_completed}/#{num_total}"
   end
+
+  def sort_lists!(lists)
+    # list_copy = lists.dup
+    lists.sort_by! { |list| list_completed?(list) ? 1 : 0 }
+  end
+
+  def sort_todos(todos)
+    todos.sort_by! { |todo| todo[:completed] ? 1: 0 }
+  end
 end
 
 get "/" do
