@@ -60,9 +60,9 @@ end
 # Return an error message if name is invalid; nil if name valid
 def error_for_list_name(name)
   if !(1..100).cover? name.size
-    "#List must be between 1 and 100 characters."
+    "List must be between 1 and 100 characters."
   elsif session[:lists].any? { |list| list[:name] == name }
-    "#List must be unique."
+    "List must be unique."
   end
 end
 
@@ -71,6 +71,12 @@ def error_for_todo(name)
   if !(1..100).cover? name.size
     "Todo must be between 1 and 100 characters."
   end
+end
+
+# generate unique id for lists
+def next_list_id(lists)
+  max = lists.map { |list| list[:id] }.max || 0
+  max + 1
 end
 
 # Create a new list
@@ -82,7 +88,8 @@ post '/lists' do
     session[:error] = error
     erb :new_list, layout: :layout
   else
-    session[:lists] << { name: list_name, todos: [] }
+    id = next_list_id(session[:lists])
+    session[:lists] << { id: id, name: list_name, todos: [] }
     session[:success] = 'The list been created.'
     redirect '/lists'
   end
@@ -94,17 +101,26 @@ get '/lists/new' do
 end
 
 # Input validation for retrieving a list
-def load_list(index)
-  list = session[:lists][index] if index && session[:lists][index]
+def load_list(id)
+  # old solution...
+  # list = session[:lists][index] if index && session[:lists][index]
+
+  # new solution...
+  list = select_list(id)
   return list if list
 
   session[:error] = "The specified list was not found"
   redirect '/lists'
 end
 
+def select_list(list_id)
+  session[:lists].select { |list| list[:id] == list_id }.first
+end
+
 # Render specific list
 get "/lists/:id" do
   @list_id = params[:id].to_i
+
   @list = load_list(@list_id)
   erb :list, layout: :layout
 end
@@ -135,8 +151,13 @@ end
 
 # delete an existing list
 post "/lists/:id/delete" do
-  id = params[:id].to_i
-  session[:lists].delete_at id
+  list_id = params[:id].to_i
+  # old solution...
+  # session[:lists].delete_at id
+
+  # new solution...
+  to_delete = load_list(list_id)
+  session[:lists].delete(to_delete)
 
   if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
     # ajax
