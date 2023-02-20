@@ -137,8 +137,20 @@ end
 post "/lists/:id/delete" do
   id = params[:id].to_i
   session[:lists].delete_at id
-  session[:success] = "List successfully deleted"
-  redirect "/lists"
+
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    # ajax
+    "/lists"
+  else
+    session[:success] = "List successfully deleted"
+    redirect "/lists"
+  end
+end
+
+# Get unique id for todo
+def next_todo_id(todos)
+  max = todos.map { |todo| todo[:id] }.max || 0
+  max + 1
 end
 
 # Add a new todo to a list
@@ -152,7 +164,8 @@ post "/lists/:list_id/todos" do
     session[:error] = error
     erb :list, layout: :layout
   else
-    @list[:todos] << { name: todo, completed: false }
+    id = next_todo_id(@list[:todos])
+    @list[:todos] << { id: id, name: todo, completed: false }
     session[:success] = "Todo added"
     redirect "/lists/#{@list_id}"
   end
@@ -162,11 +175,17 @@ end
 post "/lists/:list_id/todos/:todo_id/delete" do
   @list_id = params[:list_id].to_i
   @list = load_list(@list_id)
-  @todo_id = params[:todo_id].to_i
 
+  @todo_id = params[:todo_id].to_i
   @list[:todos].delete_at(@todo_id)
-  session[:success] = "Todo successfully deleted"
-  redirect "/lists/#{@list_id}"
+
+  if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
+    # ajax
+    status 204 # OK, no content
+  else
+    session[:success] = "Todo successfully deleted"
+    redirect "/lists/#{@list_id}"
+  end
 end
 
 # Toggle a todo item complete/incomplete
