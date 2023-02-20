@@ -153,6 +153,10 @@ def next_todo_id(todos)
   max + 1
 end
 
+def select_todo(todos)
+  todos.select { |todo| todo[:id] == @todo_id }.first
+end
+
 # Add a new todo to a list
 post "/lists/:list_id/todos" do
   @list_id = params[:list_id].to_i
@@ -176,8 +180,15 @@ post "/lists/:list_id/todos/:todo_id/delete" do
   @list_id = params[:list_id].to_i
   @list = load_list(@list_id)
 
+  # original solution...
+  # @todo_id = params[:todo_id].to_i
+  # @list[:todos].delete_at(@todo_id)
+
+  # new solution...
   @todo_id = params[:todo_id].to_i
-  @list[:todos].delete_at(@todo_id)
+  # to_delete = @list[:todos].select { |todo| todo[:id] == @todo_id }.first
+  to_delete = select_todo(@list[:todos])
+  @list[:todos].delete(to_delete)
 
   if env["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
     # ajax
@@ -193,9 +204,15 @@ post "/lists/:list_id/todos/:todo_id" do
   @list_id = params[:list_id].to_i
   @list = load_list(@list_id)
   @todo_id = params[:todo_id].to_i
+  to_toggle = select_todo(@list[:todos])
+
   toggle = params['completed'] == 'true'
 
-  @list[:todos][@todo_id][:completed] = toggle 
+  # original...
+  # @list[:todos][@todo_id][:completed] = toggle 
+
+  # new...
+  to_toggle[:completed] = toggle
   session[:success] = "Todo status updated"
   redirect "/lists/#{@list_id}"
 end
